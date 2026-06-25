@@ -8,7 +8,8 @@
 // @noframes
 // @grant        GM_setValue
 // @grant        GM_getValue
-
+// @updateURL    https://github.com/vZVXv/ZVX-DSD/raw/refs/heads/main/zvx-deep-sleep-dimmer.user.js
+// @downloadURL  https://github.com/vZVXv/ZVX-DSD/raw/refs/heads/main/zvx-deep-sleep-dimmer.user.js
 // ==/UserScript==
 
 // Комментарий: @noframes запрещает работу скрипта внутри фреймов (iframe)
