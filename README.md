@@ -1,6 +1,11 @@
 # ZVX - Deep Sleep Dimmer 🌙
 Виджет затемнения сайтов.
 
+<p align="center">
+  <img src="images/img19.png" alt="Banner" width="1000">
+</p>
+
+
 ## 🚀 Установка
 
 Нажмите на кнопку ниже, чтобы установить скрипт через Tampermonkey:
