@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZVX - Deep Sleep Dimmer
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.2.0
 // @description  Виджет затемнения сайтов.
 // @author       ZVX
 // @match        *://*/*
@@ -12,13 +12,9 @@
 // @downloadURL  https://github.com/vZVXv/ZVX-DSD/raw/refs/heads/main/zvx-deep-sleep-dimmer.user.js
 // ==/UserScript==
 
-// Комментарий: @noframes запрещает работу скрипта внутри фреймов (iframe)
-
 (function() {
     'use strict';
 
-    // ДОБАВЛЕНО: Предохранитель на уровне JS.
-    // Если мы внутри iframe (плеер, чат и т.д.), останавливаем выполнение.
     if (window !== window.top) return;
 
     // 1. Создаем слой затемнения
@@ -28,7 +24,6 @@
         top: '0',
         left: '0',
         width: '100vw',
-// ... (дальше идет весь ваш оригинальный код без изменений) ...
         height: '100vh',
         backgroundColor: 'black',
         opacity: '0',
@@ -45,13 +40,11 @@
         zIndex: '2147483646',
         display: 'flex',
         alignItems: 'center',
-        opacity: '0.75', // Базовая прозрачность
-        // ИСПОЛЬЗУЕМ DROP-SHADOW вместо BOX-SHADOW, чтобы тень облегала только элементы, а не пустой прозрачный контейнер
+        opacity: '0.75',
         filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.5))',
         transition: 'opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     });
 
-    // Эффект появления при наведении
     widget.addEventListener('mouseenter', () => {
         if (!isWidgetHidden) widget.style.opacity = '1';
     });
@@ -90,7 +83,6 @@
         let x = e.clientX + 15;
         let y = e.clientY + 15;
 
-        // Чтобы подсказка не уходила за края экрана
         const rect = tooltip.getBoundingClientRect();
         if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - 15;
         if (y + rect.height > window.innerHeight) y = e.clientY - rect.height - 15;
@@ -104,7 +96,7 @@
         tooltip.style.visibility = 'hidden';
     }
 
-    // 3. Кнопка-луна (ручка для перетаскивания и переключатель)
+    // 3. Кнопка-луна
     const toggleBtn = document.createElement('button');
     toggleBtn.innerText = '🌙';
     Object.assign(toggleBtn.style, {
@@ -152,13 +144,12 @@
     });
     widget.appendChild(controlPanel);
 
-    // 5. Иконка сверху (Темно)
+    // 5. Иконки и ползунок
     const labelTop = document.createElement('div');
     labelTop.innerText = '🌒';
     labelTop.style.fontSize = '18px';
     controlPanel.appendChild(labelTop);
 
-    // 6. Ползунок
     const slider = document.createElement('input');
     slider.type = 'range';
     slider.min = '0';
@@ -177,7 +168,6 @@
     });
     controlPanel.appendChild(slider);
 
-    // 6.5 Иконка снизу (Светло)
     const labelBottom = document.createElement('div');
     labelBottom.innerText = '🌕';
     labelBottom.style.fontSize = '18px';
@@ -246,9 +236,11 @@
 
     function applyStyles() {
         widget.style.opacity = isWidgetHidden ? '0' : '0.75';
-        widget.style.pointerEvents = isWidgetHidden ? 'none' : 'auto';
 
-        // Восстанавливаем индивидуальные скругления углов для нужных граней
+        widget.style.pointerEvents = 'none';
+        toggleBtn.style.pointerEvents = isWidgetHidden ? 'none' : 'auto';
+        controlPanel.style.pointerEvents = isWidgetHidden ? 'none' : 'auto';
+
         if (dockSide === 'right') {
             Object.assign(widget.style, { flexDirection: 'row', left: 'auto', right: '0' });
             Object.assign(toggleBtn.style, { borderRadius: '12px 0 0 12px' });
@@ -267,7 +259,7 @@
             Object.assign(controlPanel.style, { display: 'flex', borderRadius: '0 0 12px 12px', marginTop: '0', flexDirection: 'column' });
             widget.style.transform = isWidgetHidden ? 'translateY(-100%)' : (isMenuOpen ? 'translateY(0)' : 'translateY(calc(-100% + 46px))');
 
-        } else { // Свободное положение ('none')
+        } else {
             Object.assign(widget.style, { flexDirection: 'column', right: 'auto', transform: isWidgetHidden ? 'scale(0)' : 'none' });
             Object.assign(toggleBtn.style, { borderRadius: '50%' });
             Object.assign(controlPanel.style, { display: isMenuOpen ? 'flex' : 'none', borderRadius: '12px', marginTop: '10px', flexDirection: 'column' });
@@ -309,37 +301,60 @@
             const distLeft = e.clientX;
             const distTop = e.clientY;
 
+            // Логика ПРИСОЕДИНЕНИЯ к краям
             if (dockSide === 'none') {
                 if (distRight < 60) {
                     dockSide = 'right'; isMenuOpen = false;
-                    widget.style.left = 'auto'; startY = e.clientY; initialTop = widget.getBoundingClientRect().top;
+                    applyStyles();
+                    widget.style.left = 'auto';
+                    startY = e.clientY; initialTop = e.clientY - (widget.offsetHeight / 2);
                 } else if (distLeft < 60) {
                     dockSide = 'left'; isMenuOpen = false;
-                    widget.style.right = 'auto'; startY = e.clientY; initialTop = widget.getBoundingClientRect().top;
+                    applyStyles();
+                    widget.style.right = 'auto';
+                    startY = e.clientY; initialTop = e.clientY - (widget.offsetHeight / 2);
                 } else if (distTop < 60) {
                     dockSide = 'top'; isMenuOpen = false;
-                    startX = e.clientX; initialLeft = widget.getBoundingClientRect().left;
+                    applyStyles();
+                    startX = e.clientX; initialLeft = e.clientX - (widget.offsetWidth / 2);
                 }
             } else {
+                // Логика ОТСОЕДИНЕНИЯ от краев
                 if (dockSide === 'right' && distRight > 100) {
-                    dockSide = 'none'; widget.style.right = 'auto';
+                    dockSide = 'none';
+                    applyStyles();
+                    widget.style.right = 'auto';
                     widget.style.left = (e.clientX - 23) + 'px';
-                    startX = e.clientX; startY = e.clientY; initialLeft = e.clientX - 23; initialTop = widget.getBoundingClientRect().top;
+                    widget.style.top = (e.clientY - 23) + 'px';
+                    startX = e.clientX; startY = e.clientY; initialLeft = e.clientX - 23; initialTop = e.clientY - 23;
                 } else if (dockSide === 'left' && distLeft > 100) {
-                    dockSide = 'none'; widget.style.left = (e.clientX - 23) + 'px';
-                    startX = e.clientX; startY = e.clientY; initialLeft = e.clientX - 23; initialTop = widget.getBoundingClientRect().top;
+                    dockSide = 'none';
+                    applyStyles();
+                    widget.style.left = (e.clientX - 23) + 'px';
+                    widget.style.top = (e.clientY - 23) + 'px';
+                    startX = e.clientX; startY = e.clientY; initialLeft = e.clientX - 23; initialTop = e.clientY - 23;
                 } else if (dockSide === 'top' && distTop > 100) {
-                    dockSide = 'none'; widget.style.top = (e.clientY - 23) + 'px';
-                    startX = e.clientX; startY = e.clientY; initialTop = e.clientY - 23; initialLeft = widget.getBoundingClientRect().left;
+                    dockSide = 'none';
+                    applyStyles();
+                    widget.style.top = (e.clientY - 23) + 'px';
+                    widget.style.left = (e.clientX - 23) + 'px';
+                    startX = e.clientX; startY = e.clientY; initialTop = e.clientY - 23; initialLeft = e.clientX - 23;
                 }
             }
 
+            // Ограничение выхода за края экрана с учетом реальных габаритов
             if (dockSide === 'right' || dockSide === 'left') {
                 let newTop = initialTop + (e.clientY - startY);
-                widget.style.top = Math.max(0, Math.min(newTop, window.innerHeight - 46)) + 'px';
+                let btnOffset = (widget.offsetHeight - 46) / 2;
+                let minTop = -btnOffset;
+                let maxTop = window.innerHeight - 46 - btnOffset;
+                widget.style.top = Math.max(minTop, Math.min(newTop, maxTop)) + 'px';
             } else if (dockSide === 'top') {
                 let newLeft = initialLeft + (e.clientX - startX);
-                widget.style.left = Math.max(0, Math.min(newLeft, window.innerWidth - 46)) + 'px';
+                let btnOffsetX = (widget.offsetWidth - 46) / 2;
+                let minLeft = -btnOffsetX;
+                let maxLeft = window.innerWidth - 46 - btnOffsetX;
+                widget.style.left = Math.max(minLeft, Math.min(newLeft, maxLeft)) + 'px';
             } else {
                 let newLeft = initialLeft + (e.clientX - startX);
                 let newTop = initialTop + (e.clientY - startY);
@@ -347,7 +362,9 @@
                 widget.style.top = Math.max(0, Math.min(newTop, window.innerHeight - (isMenuOpen ? widget.offsetHeight : 46))) + 'px';
             }
 
-            applyStyles();
+            if (!['right', 'left', 'top'].includes(dockSide) || !isMoved) {
+                applyStyles();
+            }
         }
     });
 
